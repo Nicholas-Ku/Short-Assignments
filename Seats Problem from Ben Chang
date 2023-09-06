@@ -1,0 +1,142 @@
+// Seats Problem from Ben Chang.cpp : This file contains the 'main' function. Program execution begins and ends there.
+//
+
+// There is a bench with a set number of seats and you want to sit the farthest possible distance from everyone
+// The input will be a boolean vector, 0s represent the seat is vacant and 1s represent the seat is taken
+
+// Process:
+// Consider 3 different scenarios
+// 1) Left Scenario (only possible if the leftmost seat is vacant)
+// 2) Between Scenario (equidistant between two vacant seats)
+// 3) Right Scenario (only possible if the rightmost seat is vafcant)
+// We will run all three scenarios and return the one with the largest distance
+
+#include <assert.h>
+
+#include <vector>
+#include <iostream>
+using namespace std;
+
+class Seat_Solver {
+public:
+    Seat_Solver() {
+        current_max_distance_ = -1;
+        seat_of_max_distance_ = -1;
+        last_occupied_seat_ = -1;
+    }
+
+    int seat_solve(vector<bool> &input) {
+        current_max_distance_ = -1;
+        seat_of_max_distance_ = -1;
+        last_occupied_seat_ = -1;
+
+        left_scenario(input);
+        between_scenario_and_right_scenario(input);
+
+        return seat_of_max_distance_;
+    }
+
+private:
+    int current_max_distance_; // Used to store what the current max distance is
+    int seat_of_max_distance_; // Used to store the seat where the max distance is
+
+    int last_occupied_seat_; // Used to store most recently occupied seat we found
+
+    void left_scenario(vector<bool> &input) {
+        if (input[0] == true) {
+            last_occupied_seat_ = 0;
+            return;
+        }
+
+        // If the entire input is empty, we'll just sit at the end
+        int temp_distance = 0;
+        for (int i = 1; i < input.size(); i++) {
+            temp_distance++;
+            if (input[i] == true) {
+                last_occupied_seat_ = i;
+                break;
+            }
+        }
+
+        if (temp_distance > current_max_distance_) {
+            current_max_distance_ = temp_distance;
+            seat_of_max_distance_ = 0;
+        }
+    }
+
+    // Remember that this run after the left_scenario and so we will have the last_occupied_seat_ updated 
+    // Also consider if there is no between scenario
+    // Let's actually combine the between scenario and the right scenario because we're going to use a for loop to traverse through the rest of the vector anyways
+    // The between scenario would typically just stop after we hit the end of the vector and the last seat isn't occupied
+    // But we're already keeping track of the distance anyways and have been traversing through the vector
+    void between_scenario_and_right_scenario(vector<bool> &input) {
+        int temp_distance = 0;
+
+        // Note that we are actually starting with the element after the occupied seat
+        for (int i = last_occupied_seat_ + 1; i < input.size(); i++) {
+            temp_distance++;
+
+            // This is the right scenario
+            if (i == input.size() - 1 && input[i] == false) {
+                if (temp_distance > current_max_distance_) {
+                    current_max_distance_ = temp_distance;
+                    seat_of_max_distance_ = input.size() - 1;
+                    return;
+                }
+            }
+
+            // This is a bit tricky because we want the max distance between each person
+            // The left and right scenario have to only take into account the distance from one person
+            // The between_scenario is when you sit equidistant between two people
+            // temp_distance actually only tracks the distance between seats, not between each person
+            // 
+            // So you'd only pick a between scenario if temp_distance > current_max_distance_ * 2
+            // If that is the case, then you would update current_max_distance = temp_distance / 2;
+            // And then pick seat # (seat 1 + seat 2) / 2
+
+            // Between Scenario
+            if (input[i] == true) {
+                if (temp_distance >= current_max_distance_ * 2) {
+                    if (last_occupied_seat_ == i - 1) break; // There is no space between two seats that are occupied
+                    current_max_distance_ = temp_distance / 2;
+                    seat_of_max_distance_ = (last_occupied_seat_ + i) / 2;
+                }
+                last_occupied_seat_ = i; // Now update the last_occupied_seat
+                temp_distance = 0; // Resetting the temp_distance
+            }
+        }
+    }
+};
+
+int main()
+{
+    Seat_Solver place_holder;
+
+    // Testing left scenario
+    vector<bool> test_1 = { 0, 0, 0, 1 };
+    assert(place_holder.seat_solve(test_1) == 0);
+
+    // Testing between scenario
+    vector<bool> test_2 = { 1, 0, 0, 0, 1 };
+    assert(place_holder.seat_solve(test_2) == 2);
+
+    // Testing right scenario
+    vector<bool> test_3 = { 1, 0, 0, 0, 0 };
+    assert(place_holder.seat_solve(test_3) == 4);
+
+    // Testing all vacant scenario
+    vector<bool> test_4 = { 0, 0, 0, 0, 0 };
+    assert(place_holder.seat_solve(test_4) == 4);
+
+    // Testing all taken scenario
+    vector<bool> test_5 = { 1, 1, 1, 1, 1 };
+    assert(place_holder.seat_solve(test_5) == -1);
+
+    // Combination test
+    vector<bool> test_6 = { 1, 0, 1, 0, 0 };
+    assert(place_holder.seat_solve(test_6) == 4);;
+
+    // Combination test 2
+    vector<bool> test_7 = { 0, 1, 0, 0, 0, 0, 0, 1, 0 };
+    assert(place_holder.seat_solve(test_7) == 4);
+}
